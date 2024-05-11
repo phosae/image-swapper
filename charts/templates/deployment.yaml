@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ .Chart.Name }}
+  name: {{ .Chart.Name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+    spec:
+      containers:
+        - image: {{ .Values.image }}
+          env:
+            - name: CERT_DIR
+              value: "/etc/{{ .Chart.Name }}/certs"
+            - name: CONFIG_DIR
+              value: "/etc/{{ .Chart.Name }}/configs"
+          name: {{ .Chart.Name }}
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /etc/{{ .Chart.Name }}/certs/
+              name: tls-cert
+            - mountPath: /etc/{{ .Chart.Name }}/configs/
+              name: config
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: tls-cert
+          secret:
+            secretName: {{ .Chart.Name }}-tls-secret
+        - name: config
+          configMap:
+            name: {{ .Chart.Name }}
